@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="ContactAangle : Routines for calculating contact angles from MD simulations">
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>ContactAangle</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/tcmoore3/contact_angle">View on GitHub</a>
+
+          <h1 id="project_title">ContactAangle</h1>
+          <h2 id="project_tagline">Routines for calculating contact angles from MD simulations</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/tcmoore3/contact_angle/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/tcmoore3/contact_angle/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h3>
+<a id="contact-angle-calculations" class="anchor" href="#contact-angle-calculations" aria-hidden="true"><span class="octicon octicon-link"></span></a>Contact Angle Calculations</h3>
+
+<p>This package provides routines for calculating contact angles from MD simulations of surface wetting. An script to calculate the contact angle would look something like:</p>
+
+<pre><code>&gt;&gt;&gt; import contact_angle as co
+&gt;&gt;&gt; import matplotlib.pyplot as plt
+&gt;&gt;&gt; import mdtraj as md
+&gt;&gt;&gt; import numpy as np
+
+&gt;&gt;&gt; traj = md.load('wetting.xtc', top='wetting.gro')
+&gt;&gt;&gt; ca = co.calc_contact_angle(traj.xyz[50:, 29600:], guess_R=1.5, 
+        guess_z0=2.0, guess_rho_n=1.0, n_fit=55, left_tol=0.1, 
+        z_range=(9, 13), surface_normal='z', n_bins=100)
+&gt;&gt;&gt; co.print_contact_angle_results(ca)
+
+Contact angle fitting results
+-----------------------------
+contact angle =  52.6266050581  degrees
+R_fit =  6.78317095664
+z0_fit =  5.52256848571
+rho_n_fit =  79.3187821804
+height =  2.66573944234
+right intercept =  12.3057394423
+left intercept =  9.64
+
+&gt;&gt;&gt; fig, ax = plt.subplots()
+&gt;&gt;&gt; ax.plot(ca['z'], ca['nz'], 'ko', label='raw')
+&gt;&gt;&gt; ax.plot(ca['z'], ca['nz_extrapolated'], 'k-', label='fit')
+&gt;&gt;&gt; fig.savefig('fit.pdf')
+</code></pre>
+
+<p>where we skip the first 50 frames and the molecules in the droplet have indices greater than 29600.</p>
+
+<p>Note that the algorithm fits a parabola to the calculated number density profile, and that the number of points used in the fit can affect the final answer. Therefore, it is advisable to validate your results by</p>
+
+<ol>
+<li>visualizing the system to make sure the final answer is reasonable, and</li>
+<li>visualizing the results of the fitting.
+<code>calc_contact_angle()</code> returns a dictionary containing the information necessary to visualize the fits. The results of fitting to 50 and 10 points (i.e., <code>n_fit</code> = 50 and 10, respectively) are shown below. Note that the calculations give very different answers, illustrating the need to validate.</li>
+</ol>
+
+<p>Currently, several assumptions are made for the calculations:</p>
+
+<ul>
+<li>The vector normal to the surface is parallel to the z-axis</li>
+<li>The droplet is above the surface in the z-direction</li>
+</ul>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">ContactAangle maintained by <a href="https://github.com/tcmoore3">tcmoore3</a></p>
+        <p>Published with <a href="https://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>

@@ -5,7 +5,8 @@ import pdb
 
 
 def calc_contact_angle(traj, guess_R=1.0, guess_z0=0.0, guess_rho_n=1.0,
-        n_fit=10, left_tol=0.1, z_range=None, surface_normal='z', n_bins=50):
+        n_fit=10, left_tol=0.1, z_range=None, surface_normal='z', n_bins=50,
+        fit_range=None):
     """Calculate contact angle from atoms in a trajectory
 
     This function takes a trajectory and calculates the conact angle with a 
@@ -54,6 +55,8 @@ def calc_contact_angle(traj, guess_R=1.0, guess_z0=0.0, guess_rho_n=1.0,
         Assume surface normal parallel to this axis (x, y, or z)
     n_bins : int
         Number of bins to use in the histogram for number density profile
+    fit_range : (float, float), optional, default=None
+        If specified, fit the density profile to this range, ignoring n_fit
 
     Returns
     -------
@@ -75,8 +78,12 @@ def calc_contact_angle(traj, guess_R=1.0, guess_z0=0.0, guess_rho_n=1.0,
 
     """
     # make sure input parameters are compatible
-    if n_bins <= n_fit:
+    if n_bins <= n_fit and fit_range == None:
         raise ValueError('n_bins must be greater than n_fit')
+    if fit_range != None and (fit_range[0] < z_range[0] or fit_range[1] >
+            z_range[1]):
+        raise ValueError('fit_range must be within z_range')
+
     ax3 = {'x': 0, 'y': 1, 'z': 2}
     hist, bins = np.histogram(traj[:, :, ax3[surface_normal]],
             bins=n_bins, range=z_range)
@@ -86,6 +93,10 @@ def calc_contact_angle(traj, guess_R=1.0, guess_z0=0.0, guess_rho_n=1.0,
     idx_max = np.argmax(hist) + 1
     z_fit = bins[idx_max:idx_max+n_fit]
     nz_to_fit = hist[idx_max:idx_max+n_fit]
+    if fit_range != None:
+        fit_indices = _find_fit_indices(fit_range, bins)
+        z_fit = bins[fit_indices[0]:fit_indices[1]]
+        nz_to_fit = hist[fit_indices[0]:fit_indices[1]]
     fnz = leastsq(nz_error, p0, args=(nz_to_fit, z_fit))
     R_fit, z0_fit, rho_n_fit = fnz[0][0], fnz[0][1], fnz[0][2]
     nz_fit = calc_nz(z_fit, z0_fit, R_fit, rho_n_fit)
@@ -150,3 +161,13 @@ def print_contact_angle_results(ret_d):
 def print_contact_angle_fits(ca, filename='fit.txt'):
     x = np.vstack((ca['z'], ca['nz'], ca['nz_extrapolated'], ca['fit_error'])).T
     np.savetxt(filename, x)
+
+def _find_fit_indices(fit_range, z):
+    """Find indices of range"""
+    for i, val in enumerate(z):
+        if z[i+1] > fit_range[0] and val < fit_range[0]:
+            l_ind = i
+        if z[i+1] > fit_range[1] and val < fit_range[1]:
+            r_ind = i
+            break
+    return(l_ind, r_ind)

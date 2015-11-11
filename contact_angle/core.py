@@ -6,7 +6,7 @@ import pdb
 
 def calc_contact_angle(traj, guess_R=1.0, guess_z0=0.0, guess_rho_n=1.0,
         n_fit=10, left_tol=0.1, z_range=None, surface_normal='z', n_bins=50,
-        fit_range=None):
+        fit_range=None, droplet_location='above'):
     """Calculate contact angle from atoms in a trajectory
 
     This function takes a trajectory and calculates the conact angle with a 
@@ -57,6 +57,8 @@ def calc_contact_angle(traj, guess_R=1.0, guess_z0=0.0, guess_rho_n=1.0,
         Number of bins to use in the histogram for number density profile
     fit_range : (float, float), optional, default=None
         If specified, fit the density profile to this range, ignoring n_fit
+    droplet_location : str, optional, default='above'
+        Specify whether the droplet is "above" or "below" the surface
 
     Returns
     -------
@@ -70,12 +72,12 @@ def calc_contact_angle(traj, guess_R=1.0, guess_z0=0.0, guess_rho_n=1.0,
         - 'nz_fit' : fitted number density profile
         - 'nz_extrapolated' : fitted number density profile over full z range
         - 'height' : height of spherical cap
-        - 'right_intercept' : calculated location of tip of sphere
-        - 'left_intercept' : calculated location of intersecting plane
+        - 'tip_intercept' : calculated location of tip of sphere
+        - 'surface_intercept' : calculated location of intersecting plane
         - 'fit_error' : relative error between fit and measured density profile
         - 'nz' : calculated number density profile
         - 'z' : the z values of the number density profile
-
+        - 'droplet_location' : location of droplet w.r.t. surface (above/below)
     """
     # make sure input parameters are compatible
     if n_bins <= n_fit and fit_range == None:
@@ -101,16 +103,19 @@ def calc_contact_angle(traj, guess_R=1.0, guess_z0=0.0, guess_rho_n=1.0,
     R_fit, z0_fit, rho_n_fit = fnz[0][0], fnz[0][1], fnz[0][2]
     nz_fit = calc_nz(z_fit, z0_fit, R_fit, rho_n_fit)
     full_nz_fit = calc_nz(bins, z0_fit, R_fit, rho_n_fit)
-    right_intercept = z0_fit + R_fit
+    above_below = {'above': 1.0, 'below': -1.0}
+    tip_intercept = z0_fit + R_fit * above_below[droplet_location]
     error = np.absolute((full_nz_fit - hist)/hist)
-    left_intercept = find_left_intercept(bins, error, left_tol)
-    h = right_intercept - left_intercept
+    surface_intercept = find_surface_intercept(bins, error, left_tol, droplet_location)
+    _check_intercepts(droplet_location, tip_intercept, surface_intercept)
+    h = np.absolute(tip_intercept - surface_intercept)  # won't get here if above fails
     contact_angle = angle_from_Rh(R_fit, h)
     ret_d = {'z_fit': z_fit, 'R_fit': R_fit, 'z0_fit': z0_fit,
              'rho_n_fit': rho_n_fit, 'nz_fit': nz_fit, 'nz': hist,
              'nz_extrapolated': full_nz_fit, 'height': h, 'z' : bins, 
-             'right_intercept': right_intercept, 'left_intercept': left_intercept,
-             'fit_error': error, 'theta': contact_angle}
+             'tip_intercept': tip_intercept, 
+             'surface_intercept': surface_intercept, 'fit_error': error, 
+             'theta': contact_angle}
     return ret_d
 
 def angle_from_Rh(R, h):
@@ -141,7 +146,10 @@ def calc_nz(z, z0, R, rho_n):
     dz = np.absolute(z[1] - z[0])
     return rho_n * np.pi * dz * (R**2.0 - (z0 - z)**2.0)
 
-def find_left_intercept(bins, error, tol):
+def find_surface_intercept(bins, error, tol, droplet_location):
+    if droplet_location == 'below':
+        error = reverse(error)
+        bins = reverse(bins)
     for i, value in enumerate(error[1:]):
         if value < tol and error[i] > tol:
             return 0.5 * (bins[i+1] + bins[i])
@@ -155,8 +163,9 @@ def print_contact_angle_results(ret_d):
     print 'z0_fit = ', ret_d['z0_fit']
     print 'rho_n_fit = ', ret_d['rho_n_fit']
     print 'height = ', ret_d['height']
-    print 'right intercept = ', ret_d['right_intercept']
-    print 'left intercept = ' , ret_d['left_intercept']
+    print 'tip intercept = ', ret_d['tip_intercept']
+    print 'surface intercept = ' , ret_d['surface_intercept']
+    print 'droplet location: ', ret_d['droplet_location']
 
 def print_contact_angle_fits(ca, filename='fit.txt'):
     x = np.vstack((ca['z'], ca['nz'], ca['nz_extrapolated'], ca['fit_error'])).T
@@ -171,3 +180,9 @@ def _find_fit_indices(fit_range, z):
             r_ind = i
             break
     return(l_ind, r_ind)
+
+def _check_intercepts(droplet_location, tip_intercept, surface_intercept):
+    if droplet_location == 'above' and tip_intercept < surface_intercept:
+        raise RuntimeError('Droplet tip below surface but droplet above surface')
+    if droplet_location == 'below' and tip_intercept > surface_intercept:
+        raise RuntimeError('Droplet tip above surface but droplet below surface')

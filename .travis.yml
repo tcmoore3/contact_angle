@@ -41,5 +41,5 @@ install:
 script:
   - coverage run --rcfile=.coveragerc --source=contact_angle setup.py test
 
-#after_success:
-#  - coveralls
+after_success:
+  - coveralls

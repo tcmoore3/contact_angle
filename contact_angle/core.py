@@ -115,7 +115,7 @@ def calc_contact_angle(traj, guess_R=1.0, guess_z0=0.0, guess_rho_n=1.0,
              'nz_extrapolated': full_nz_fit, 'height': h, 'z' : bins, 
              'tip_intercept': tip_intercept, 
              'surface_intercept': surface_intercept, 'fit_error': error, 
-             'theta': contact_angle}
+             'theta': contact_angle, 'droplet_location': droplet_location}
     return ret_d
 
 def angle_from_Rh(R, h):
@@ -148,8 +148,8 @@ def calc_nz(z, z0, R, rho_n):
 
 def find_surface_intercept(bins, error, tol, droplet_location):
     if droplet_location == 'below':
-        error = reverse(error)
-        bins = reverse(bins)
+        error = list(reversed(error))
+        bins = list(reversed(bins))
     for i, value in enumerate(error[1:]):
         if value < tol and error[i] > tol:
             return 0.5 * (bins[i+1] + bins[i])

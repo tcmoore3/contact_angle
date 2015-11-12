@@ -39,7 +39,8 @@ install:
   - python setup.py install
 
 script:
-  - coverage run --rcfile=.coveragerc --source=contact_angle setup.py test
+  - invoke test
+#  - coverage run --rcfile=.coveragerc --source=contact_angle setup.py test
 
 after_success:
   - coveralls

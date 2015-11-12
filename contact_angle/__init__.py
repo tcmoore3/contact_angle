@@ -1,1 +1,1 @@
-from contact_angle.core import *
+from contact_angle.core import calc_contact_angle

@@ -1,8 +1,8 @@
 import contact_angle as cnt
-from contact_angle.utils.general import get_fn
 import mdtraj as md
 import numpy as np
-import pytest
+
+from contact_angle.utils.general import get_fn
 
 
 def test_flipped():

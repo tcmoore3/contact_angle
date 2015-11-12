@@ -25,7 +25,7 @@ class PyTest(TestCommand):
 
 
 setup(name='contact_angle',
-      version='beta',
+      version='0.0',
       description='Routines for calculating contact angles',
       url='http://github.com/tcmoore3/contact_angle',
       author='Timothy C. Moore',

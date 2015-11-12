@@ -1,3 +1,4 @@
+from __future__ import print_function
 import mdtraj as md
 import numpy as np
 from scipy.optimize import leastsq
@@ -155,17 +156,17 @@ def find_surface_intercept(bins, error, tol, droplet_location):
             return 0.5 * (bins[i+1] + bins[i])
 
 def print_contact_angle_results(ret_d):
-    print ''
-    print 'Contact angle fitting results'
-    print '-----------------------------'
-    print 'contact angle = ', ret_d['theta'], ' degrees'
-    print 'R_fit = ', ret_d['R_fit']
-    print 'z0_fit = ', ret_d['z0_fit']
-    print 'rho_n_fit = ', ret_d['rho_n_fit']
-    print 'height = ', ret_d['height']
-    print 'tip intercept = ', ret_d['tip_intercept']
-    print 'surface intercept = ' , ret_d['surface_intercept']
-    print 'droplet location: ', ret_d['droplet_location']
+    print('')
+    print('Contact angle fitting results')
+    print('-----------------------------')
+    print('contact angle = ', ret_d['theta'], ' degrees')
+    print('R_fit = ', ret_d['R_fit'])
+    print('z0_fit = ', ret_d['z0_fit'])
+    print('rho_n_fit = ', ret_d['rho_n_fit'])
+    print('height = ', ret_d['height'])
+    print('tip intercept = ', ret_d['tip_intercept'])
+    print('surface intercept = ' , ret_d['surface_intercept'])
+    print('droplet location: ', ret_d['droplet_location'])
 
 def print_contact_angle_fits(ca, filename='fit.txt'):
     x = np.vstack((ca['z'], ca['nz'], ca['nz_extrapolated'], ca['fit_error'])).T

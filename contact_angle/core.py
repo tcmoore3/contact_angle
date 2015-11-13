@@ -1,13 +1,14 @@
 from __future__ import print_function
+from numbers import Number
+
 import mdtraj as md
 import numpy as np
 from scipy.optimize import leastsq
-import pdb
 
 
 def calc_contact_angle(traj, guess_R=1.0, guess_z0=0.0, guess_rho_n=1.0,
         n_fit=10, left_tol=0.1, z_range=None, surface_normal='z', n_bins=50,
-        fit_range=None, droplet_location='above'):
+        fit_range=None, droplet_location='above', interface_location=None):
     """Calculate contact angle from atoms in a trajectory
 
     This function takes a trajectory and calculates the conact angle with a 
@@ -30,9 +31,6 @@ def calc_contact_angle(traj, guess_R=1.0, guess_z0=0.0, guess_rho_n=1.0,
       Always confirm with a visualization of your system.
 
     Fixes I plan on implementing:
-    - Better handling of "top/bottom" sherical cap: allow vector from base
-      circle to cap to point in either positive or negative direction. This
-      should be a fairly eaxy fix.
     - Calculation for cylindrical droplets.
     - Option to smooth number density profile.
 
@@ -107,7 +105,11 @@ def calc_contact_angle(traj, guess_R=1.0, guess_z0=0.0, guess_rho_n=1.0,
     above_below = {'above': 1.0, 'below': -1.0}
     tip_intercept = z0_fit + R_fit * above_below[droplet_location]
     error = np.absolute((full_nz_fit - hist)/hist)
-    surface_intercept = find_surface_intercept(bins, error, left_tol, droplet_location)
+    if(isinstance(interface_location, Number)):
+        surface_intercept = interface_location
+    else:
+        surface_intercept = find_surface_intercept(bins, error,
+                left_tol, droplet_location)
     _check_intercepts(droplet_location, tip_intercept, surface_intercept)
     h = np.absolute(tip_intercept - surface_intercept)  # won't get here if above fails
     contact_angle = angle_from_Rh(R_fit, h)
